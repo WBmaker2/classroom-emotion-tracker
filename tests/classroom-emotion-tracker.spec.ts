@@ -100,7 +100,7 @@ test("today reset only happens after confirmation", async ({ page }) => {
   });
   await page.getByRole("button", { name: "오늘 기록 초기화" }).click();
 
-  await expect(page.getByText("1명")).toBeVisible();
+  await expect(page.getByText("1/20명 참여")).toBeVisible();
   await expect(page.getByLabel("학생 번호 격자").getByRole("button", { name: "1번 ☀️ 맑음" })).toBeVisible();
 
   page.once("dialog", async (dialog) => {
@@ -109,6 +109,6 @@ test("today reset only happens after confirmation", async ({ page }) => {
   });
   await page.getByRole("button", { name: "오늘 기록 초기화" }).click();
 
-  await expect(page.getByText("0명")).toBeVisible();
+  await expect(page.getByText("0/20명 참여")).toBeVisible();
   await expect(page.getByLabel("학생 번호 격자").getByRole("button", { name: /^1번$/ })).toBeVisible();
 });
