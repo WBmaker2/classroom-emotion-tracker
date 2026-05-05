@@ -171,7 +171,7 @@ function StudentGrid({
               type="button"
               className={`student-button ${weather ? "is-complete" : ""} ${isSelected ? "is-selected" : ""}`}
               aria-label={buttonLabel}
-              aria-pressed={isSelected}
+              aria-pressed={teacherMode ? isSelected : undefined}
               key={studentNumber}
               onClick={() => onSelectStudent(studentNumber)}
             >
