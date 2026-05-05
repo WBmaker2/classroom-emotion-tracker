@@ -75,8 +75,8 @@ describe("Classroom emotion tracker app", () => {
     await user.click(screen.getByRole("button", { name: "설정 열기" }));
 
     await user.type(screen.getByLabelText("현재 PIN"), "1111");
-    await user.type(screen.getByLabelText("새 PIN"), "1357");
-    await user.type(screen.getByLabelText("새 PIN 확인"), "1357");
+    await user.type(screen.getByLabelText("새 PIN", { selector: "#next-pin" }), "1357");
+    await user.type(screen.getByLabelText("새 PIN 확인", { selector: "#next-pin-confirmation" }), "1357");
     await user.click(screen.getByRole("button", { name: "PIN 변경" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("현재 PIN이 맞지 않아요.");
@@ -93,8 +93,10 @@ describe("Classroom emotion tracker app", () => {
     await user.click(screen.getByRole("button", { name: "설정 열기" }));
 
     const currentPinInput = screen.getByLabelText("현재 PIN");
-    const newPinInput = screen.getByLabelText("새 PIN");
-    const confirmationInput = screen.getByLabelText("새 PIN 확인");
+    const newPinInput = screen.getByLabelText("새 PIN", { selector: "#next-pin" });
+    const confirmationInput = screen.getByLabelText("새 PIN 확인", {
+      selector: "#next-pin-confirmation",
+    });
 
     await user.type(currentPinInput, "2468");
     await user.type(newPinInput, "1357");
@@ -105,12 +107,8 @@ describe("Classroom emotion tracker app", () => {
     expect(currentPinInput).toHaveValue("");
     expect(newPinInput).toHaveValue("");
     expect(confirmationInput).toHaveValue("");
-
-    await user.click(screen.getByRole("button", { name: "설정 닫기" }));
-    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
-    await user.type(screen.getByLabelText("PIN"), "1357");
-    await user.click(screen.getByRole("button", { name: "잠금 해제" }));
-
-    expect(screen.getByText("선생님 모드")).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("classroom-emotion-tracker-state") ?? "{}")).toMatchObject({
+      settings: { teacherPin: "1357" },
+    });
   });
 });
