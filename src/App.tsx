@@ -43,6 +43,7 @@ type TeacherPanelProps = {
   onToggleSettings: () => void;
   onStudentCountChange: (studentCount: number) => void;
   onResetToday: () => void;
+  onChangeTeacherPin: (currentPin: string, nextPin: string, confirmation: string) => string | null;
 };
 
 const MOOD_LABELS: Record<WeatherType, string> = {
@@ -297,8 +298,36 @@ function TeacherPanel({
   onToggleSettings,
   onStudentCountChange,
   onResetToday,
+  onChangeTeacherPin,
 }: TeacherPanelProps) {
   const students = Array.from({ length: state.settings.studentCount }, (_, index) => index + 1);
+  const [currentPin, setCurrentPin] = useState("");
+  const [nextPin, setNextPin] = useState("");
+  const [confirmationPin, setConfirmationPin] = useState("");
+  const [pinChangeError, setPinChangeError] = useState("");
+  const [pinChangeSuccess, setPinChangeSuccess] = useState("");
+
+  function resetPinChangeFeedback() {
+    setPinChangeError("");
+    setPinChangeSuccess("");
+  }
+
+  function handlePinChangeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextError = onChangeTeacherPin(currentPin, nextPin, confirmationPin);
+
+    if (nextError) {
+      setPinChangeError(nextError);
+      setPinChangeSuccess("");
+      return;
+    }
+
+    setCurrentPin("");
+    setNextPin("");
+    setConfirmationPin("");
+    setPinChangeError("");
+    setPinChangeSuccess("PIN을 변경했어요.");
+  }
 
   return (
     <section className="teacher-panel" aria-labelledby="teacher-panel-title">
@@ -333,6 +362,71 @@ function TeacherPanel({
             value={state.settings.studentCount}
             onChange={(event) => onStudentCountChange(Number(event.target.value))}
           />
+          <section aria-labelledby="pin-change-title">
+            <div className="section-heading">
+              <h3 id="pin-change-title">PIN 변경</h3>
+            </div>
+            <form className="pin-form" onSubmit={handlePinChangeSubmit}>
+              <label htmlFor="current-pin">현재 PIN</label>
+              <input
+                id="current-pin"
+                autoComplete="off"
+                inputMode="numeric"
+                maxLength={4}
+                name="current-pin"
+                pattern="[0-9]{4}"
+                type="password"
+                value={currentPin}
+                onChange={(event) => {
+                  resetPinChangeFeedback();
+                  setCurrentPin(event.target.value);
+                }}
+              />
+              <label htmlFor="next-pin">새 PIN</label>
+              <input
+                id="next-pin"
+                autoComplete="off"
+                inputMode="numeric"
+                maxLength={4}
+                name="next-pin"
+                pattern="[0-9]{4}"
+                type="password"
+                value={nextPin}
+                onChange={(event) => {
+                  resetPinChangeFeedback();
+                  setNextPin(event.target.value);
+                }}
+              />
+              <label htmlFor="next-pin-confirmation">새 PIN 확인</label>
+              <input
+                id="next-pin-confirmation"
+                autoComplete="off"
+                inputMode="numeric"
+                maxLength={4}
+                name="next-pin-confirmation"
+                pattern="[0-9]{4}"
+                type="password"
+                value={confirmationPin}
+                onChange={(event) => {
+                  resetPinChangeFeedback();
+                  setConfirmationPin(event.target.value);
+                }}
+              />
+              {pinChangeError ? (
+                <p className="form-error" role="alert">
+                  {pinChangeError}
+                </p>
+              ) : null}
+              {pinChangeSuccess ? (
+                <p className="form-success" role="status">
+                  {pinChangeSuccess}
+                </p>
+              ) : null}
+              <button type="submit" className="secondary-action">
+                PIN 변경
+              </button>
+            </form>
+          </section>
           <button type="button" className="danger-action" onClick={onResetToday}>
             오늘 기록 초기화
           </button>
@@ -427,6 +521,27 @@ function App() {
     return null;
   }
 
+  function handleChangeTeacherPin(
+    currentPin: string,
+    nextPin: string,
+    confirmation: string,
+  ): string | null {
+    if (!verifyPin(state, currentPin)) {
+      return "현재 PIN이 맞지 않아요.";
+    }
+
+    if (!validatePin(nextPin)) {
+      return "새 PIN은 숫자 4자리로 입력해주세요.";
+    }
+
+    if (nextPin !== confirmation) {
+      return "새 PIN 확인이 서로 달라요.";
+    }
+
+    setState((currentState) => setTeacherPin(currentState, nextPin));
+    return null;
+  }
+
   function handleResetToday() {
     if (window.confirm("오늘 기록을 모두 초기화할까요?")) {
       setState((currentState) => resetTodayRecord(currentState, todayKey));
@@ -457,6 +572,7 @@ function App() {
           onStudentCountChange={(studentCount) =>
             setState((currentState) => updateStudentCount(currentState, studentCount))
           }
+          onChangeTeacherPin={handleChangeTeacherPin}
           onToggleSettings={() => setShowSettings((isVisible) => !isVisible)}
         />
       ) : null}
