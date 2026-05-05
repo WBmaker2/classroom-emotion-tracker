@@ -116,7 +116,9 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
       return `${segment.color} ${start}% ${offset}%`;
     })
     .join(", ");
-  const chartLabel = chartSegments.map((segment) => `${segment.label} ${segment.value}명`).join(", ");
+  const chartLabel = `오늘 감정 분포, 참여 ${stats.completed} / ${stats.total}명, ${chartSegments
+    .map((segment) => `${segment.label} ${segment.value}명`)
+    .join(", ")}`;
 
   return (
     <section className="stats-section" aria-labelledby="stats-title">
@@ -127,7 +129,7 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
       <div className="stats-overview">
         <div
           className="stats-donut-card"
-          aria-label={`오늘 감정 분포: ${chartLabel}`}
+          aria-label={chartLabel}
           role="img"
         >
           <div
