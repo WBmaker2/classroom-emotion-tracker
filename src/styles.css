@@ -378,6 +378,12 @@ h2 {
   font-weight: 800;
 }
 
+.form-success {
+  margin: 2px 0 0;
+  color: #0f766e;
+  font-weight: 800;
+}
+
 .teacher-panel {
   background: rgba(255, 255, 255, 0.94);
 }
