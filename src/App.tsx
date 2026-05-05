@@ -100,6 +100,23 @@ function Header({
 function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) {
   const stats = calculateStats(state, todayKey);
   const completionRate = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
+  const chartSegments = [
+    { label: "맑음", value: stats.sunny, color: "#f8cf45" },
+    { label: "구름", value: stats.cloudy, color: "#b8cbd8" },
+    { label: "비", value: stats.rainy, color: "#8bb7f0" },
+    { label: "번개", value: stats.stormy, color: "#f6a28c" },
+    { label: "아직 선택 전", value: stats.missing, color: "#d9e3ea" },
+  ];
+  let offset = 0;
+  const chartGradient = chartSegments
+    .map((segment) => {
+      const slice = stats.total === 0 ? 0 : (segment.value / stats.total) * 100;
+      const start = offset;
+      offset += slice;
+      return `${segment.color} ${start}% ${offset}%`;
+    })
+    .join(", ");
+  const chartLabel = chartSegments.map((segment) => `${segment.label} ${segment.value}명`).join(", ");
 
   return (
     <section className="stats-section" aria-labelledby="stats-title">
@@ -107,7 +124,24 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
         <h2 id="stats-title">오늘 현황</h2>
         <span className="completion-pill">{completionRate}%</span>
       </div>
-      <div className="stats-grid">
+      <div className="stats-overview">
+        <div
+          className="stats-donut-card"
+          aria-label={`오늘 감정 분포: ${chartLabel}`}
+          role="img"
+        >
+          <div
+            className="stats-donut"
+            style={{ background: `conic-gradient(${chartGradient})` }}
+          >
+            <div className="stats-donut-center">
+              <strong>{stats.completed}</strong>
+              <span>/ {stats.total}명</span>
+            </div>
+          </div>
+          <p>현재 참여</p>
+        </div>
+        <div className="stats-grid">
         {WEATHER_OPTIONS.map((option) => {
           const count = stats[option.value];
           return (
@@ -131,6 +165,7 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
             <p>{stats.missing}명</p>
           </div>
         </article>
+        </div>
       </div>
     </section>
   );

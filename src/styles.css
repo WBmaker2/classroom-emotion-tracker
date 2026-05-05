@@ -147,6 +147,59 @@ h2 {
   font-weight: 900;
 }
 
+.stats-overview {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.stats-donut-card {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  background: #f7fbff;
+  padding: 18px;
+}
+
+.stats-donut-card p {
+  margin-bottom: 0;
+  color: #526b7c;
+  font-weight: 800;
+}
+
+.stats-donut {
+  display: grid;
+  width: 164px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 999px;
+}
+
+.stats-donut-center {
+  display: grid;
+  width: 96px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1f2d3a;
+  text-align: center;
+}
+
+.stats-donut-center strong {
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.stats-donut-center span {
+  color: #5d7180;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(132px, 1fr));
@@ -573,6 +626,14 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-donut-card {
+    justify-items: start;
+  }
+
   .settings-panel {
     grid-template-columns: 1fr;
   }
@@ -607,6 +668,10 @@ h2 {
   .stats-grid,
   .weather-options {
     grid-template-columns: 1fr;
+  }
+
+  .stats-donut {
+    width: 148px;
   }
 
   .student-grid {
