@@ -7,6 +7,7 @@
 - 교사용 `교사용 잠그기` 기능을 추가해, 선생님 모드의 상세 정보와 설정을 즉시 숨길 수 있습니다.
 - `PIN 재진입`, `새로고침 후 복원`, `오늘 기록 초기화 확인/취소` 흐름의 테스트를 보강했습니다.
 - 파일럿 운영용 최종 점검 체크리스트를 [docs/superpowers/checklists/2026-05-05-classroom-emotion-tracker-pilot-checklist.md](docs/superpowers/checklists/2026-05-05-classroom-emotion-tracker-pilot-checklist.md)에 추가했습니다.
+- 자세한 변경 요약은 [docs/release-notes/2026-05-05-pilot-update.md](docs/release-notes/2026-05-05-pilot-update.md)에서 볼 수 있습니다.
 
 ## 사용
 
