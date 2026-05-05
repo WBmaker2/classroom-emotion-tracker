@@ -20,6 +20,7 @@ type StudentGridProps = {
   state: AppState;
   todayKey: string;
   teacherMode: boolean;
+  selectedStudentNumber: number | null;
   onSelectStudent: (studentNumber: number) => void;
 };
 
@@ -39,6 +40,7 @@ type TeacherPinModalProps = {
 type TeacherPanelProps = {
   state: AppState;
   todayKey: string;
+  selectedStudentNumber: number | null;
   showSettings: boolean;
   onToggleSettings: () => void;
   onStudentCountChange: (studentCount: number) => void;
@@ -134,7 +136,13 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
   );
 }
 
-function StudentGrid({ state, todayKey, teacherMode, onSelectStudent }: StudentGridProps) {
+function StudentGrid({
+  state,
+  todayKey,
+  teacherMode,
+  selectedStudentNumber,
+  onSelectStudent,
+}: StudentGridProps) {
   const todayRecord = state.records.find((record) => record.date === todayKey);
   const students = Array.from({ length: state.settings.studentCount }, (_, index) => index + 1);
 
@@ -142,15 +150,18 @@ function StudentGrid({ state, todayKey, teacherMode, onSelectStudent }: StudentG
     <section className="student-section" aria-labelledby="student-grid-title">
       <div className="section-heading">
         <h2 id="student-grid-title">학생 번호</h2>
-        <p>번호를 눌러 오늘의 마음 날씨를 고릅니다.</p>
+        <p>{teacherMode ? "번호를 눌러 선택한 학생의 흐름을 확인합니다." : "번호를 눌러 오늘의 마음 날씨를 고릅니다."}</p>
       </div>
       <div className="student-grid" aria-label="학생 번호 격자">
         {students.map((studentNumber) => {
           const weather = todayRecord?.entries[String(studentNumber)];
           const option = weather ? getWeatherOption(weather) : null;
+          const isSelected = teacherMode && selectedStudentNumber === studentNumber;
           const buttonLabel =
             teacherMode && option
-              ? `${studentNumber}번 ${option.emoji} ${option.label}`
+              ? `${studentNumber}번 ${option.emoji} ${option.label}${isSelected ? " 선택됨" : ""}`
+              : teacherMode
+                ? `${studentNumber}번${isSelected ? " 선택됨" : ""}`
               : weather
                 ? `${studentNumber}번 선택 완료`
                 : `${studentNumber}번 마음 날씨 선택`;
@@ -158,8 +169,9 @@ function StudentGrid({ state, todayKey, teacherMode, onSelectStudent }: StudentG
           return (
             <button
               type="button"
-              className={`student-button ${weather ? "is-complete" : ""}`}
+              className={`student-button ${weather ? "is-complete" : ""} ${isSelected ? "is-selected" : ""}`}
               aria-label={buttonLabel}
+              aria-pressed={isSelected}
               key={studentNumber}
               onClick={() => onSelectStudent(studentNumber)}
             >
@@ -294,18 +306,26 @@ function TeacherPinModal({ hasPin, onClose, onSetPin, onUnlock }: TeacherPinModa
 function TeacherPanel({
   state,
   todayKey,
+  selectedStudentNumber,
   showSettings,
   onToggleSettings,
   onStudentCountChange,
   onResetToday,
   onChangeTeacherPin,
 }: TeacherPanelProps) {
-  const students = Array.from({ length: state.settings.studentCount }, (_, index) => index + 1);
+  const todayRecord = state.records.find((record) => record.date === todayKey);
   const [currentPin, setCurrentPin] = useState("");
   const [nextPin, setNextPin] = useState("");
   const [confirmationPin, setConfirmationPin] = useState("");
   const [pinChangeError, setPinChangeError] = useState("");
   const [pinChangeSuccess, setPinChangeSuccess] = useState("");
+  const selectedHistory =
+    selectedStudentNumber === null ? [] : getStudentHistory(state, selectedStudentNumber, todayKey);
+  const selectedWeather =
+    selectedStudentNumber === null
+      ? null
+      : todayRecord?.entries[String(selectedStudentNumber)] ?? null;
+  const selectedWeatherOption = selectedWeather ? getWeatherOption(selectedWeather) : null;
 
   function resetPinChangeFeedback() {
     setPinChangeError("");
@@ -434,37 +454,49 @@ function TeacherPanel({
       ) : null}
 
       <div className="history-panel">
-        <h3>학생별 7일 흐름</h3>
-        <div className="history-list">
-          {students.map((studentNumber) => {
-            const history = getStudentHistory(state, studentNumber, todayKey);
-            return (
-              <article className="history-row" key={studentNumber}>
-                <h4>{studentNumber}번</h4>
-                <div className="history-cells" aria-label={`${studentNumber}번 7일 흐름`}>
-                  {history.map((entry) => {
-                    const option = entry.weather ? getWeatherOption(entry.weather) : null;
-                    const accessibleLabel = `${formatAccessibleDateLabel(entry.date)} ${
-                      option?.label ?? "기록 없음"
-                    }`;
-                    return (
-                      <span
-                        className={`history-cell ${entry.weather ? `cell-${entry.weather}` : ""}`}
-                        role="img"
-                        aria-label={accessibleLabel}
-                        title={entry.weather ? option?.label : "기록 없음"}
-                        key={entry.date}
-                      >
-                        <span aria-hidden="true">{option?.emoji ?? "·"}</span>
-                        <small>{formatDateLabel(entry.date)}</small>
-                      </span>
-                    );
-                  })}
+        <h3>선택한 학생 흐름</h3>
+        {selectedStudentNumber === null ? (
+          <div className="history-empty" role="status">
+            <strong>학생 번호를 눌러 살펴볼 친구를 선택해주세요.</strong>
+            <p>선택한 학생의 오늘 상태와 최근 7일 마음 날씨가 이곳에 표시됩니다.</p>
+          </div>
+        ) : (
+          <article className="history-detail-card">
+            <div className="history-detail-header">
+              <div>
+                <p className="eyebrow">선택한 학생</p>
+                <h4>{selectedStudentNumber}번</h4>
+              </div>
+              <div className={`selected-today ${selectedWeather ? `today-${selectedWeather}` : "today-missing"}`}>
+                <span aria-hidden="true">{selectedWeatherOption?.emoji ?? "○"}</span>
+                <div>
+                  <strong>{selectedWeatherOption?.label ?? "아직 선택 전"}</strong>
+                  <small>{selectedWeather !== null ? MOOD_LABELS[selectedWeather] : "오늘 기록 없음"}</small>
                 </div>
-              </article>
-            );
-          })}
-        </div>
+              </div>
+            </div>
+            <div className="history-cells selected-history" aria-label={`${selectedStudentNumber}번 7일 흐름`}>
+              {selectedHistory.map((entry) => {
+                const option = entry.weather ? getWeatherOption(entry.weather) : null;
+                const accessibleLabel = `${formatAccessibleDateLabel(entry.date)} ${
+                  option?.label ?? "기록 없음"
+                }`;
+                return (
+                  <span
+                    className={`history-cell ${entry.weather ? `cell-${entry.weather}` : ""}`}
+                    role="img"
+                    aria-label={accessibleLabel}
+                    title={entry.weather ? option?.label : "기록 없음"}
+                    key={entry.date}
+                  >
+                    <span aria-hidden="true">{option?.emoji ?? "·"}</span>
+                    <small>{formatDateLabel(entry.date)}</small>
+                  </span>
+                );
+              })}
+            </div>
+          </article>
+        )}
       </div>
     </section>
   );
@@ -473,7 +505,8 @@ function TeacherPanel({
 function App() {
   const todayKey = useMemo(() => getKoreanDateKey(), []);
   const [state, setState] = useState<AppState>(() => loadAppState(todayKey));
-  const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
+  const [pickerStudent, setPickerStudent] = useState<number | null>(null);
+  const [selectedTeacherStudent, setSelectedTeacherStudent] = useState<number | null>(null);
   const [teacherMode, setTeacherMode] = useState(false);
   const [showTeacherPin, setShowTeacherPin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -483,13 +516,28 @@ function App() {
     saveAppState(state);
   }, [state]);
 
+  useEffect(() => {
+    if (selectedTeacherStudent !== null && selectedTeacherStudent > state.settings.studentCount) {
+      setSelectedTeacherStudent(null);
+    }
+  }, [selectedTeacherStudent, state.settings.studentCount]);
+
   function handleWeatherSelect(weather: WeatherType) {
-    if (selectedStudent === null) {
+    if (pickerStudent === null) {
       return;
     }
 
-    setState((currentState) => selectWeather(currentState, selectedStudent, weather, todayKey));
-    setSelectedStudent(null);
+    setState((currentState) => selectWeather(currentState, pickerStudent, weather, todayKey));
+    setPickerStudent(null);
+  }
+
+  function handleStudentSelect(studentNumber: number) {
+    if (teacherMode) {
+      setSelectedTeacherStudent(studentNumber);
+      return;
+    }
+
+    setPickerStudent(studentNumber);
   }
 
   function handleSetPin(pin: string, confirmation: string): string | null {
@@ -563,13 +611,15 @@ function App() {
       <StatsBoard state={state} todayKey={todayKey} />
       <StudentGrid
         state={state}
+        selectedStudentNumber={selectedTeacherStudent}
         teacherMode={teacherMode}
         todayKey={todayKey}
-        onSelectStudent={setSelectedStudent}
+        onSelectStudent={handleStudentSelect}
       />
       {teacherMode ? (
         <TeacherPanel
           state={state}
+          selectedStudentNumber={selectedTeacherStudent}
           showSettings={showSettings}
           todayKey={todayKey}
           onResetToday={handleResetToday}
@@ -580,10 +630,10 @@ function App() {
           onToggleSettings={() => setShowSettings((isVisible) => !isVisible)}
         />
       ) : null}
-      {selectedStudent !== null ? (
+      {pickerStudent !== null ? (
         <WeatherPickerModal
-          studentNumber={selectedStudent}
-          onClose={() => setSelectedStudent(null)}
+          studentNumber={pickerStudent}
+          onClose={() => setPickerStudent(null)}
           onSelect={handleWeatherSelect}
         />
       ) : null}

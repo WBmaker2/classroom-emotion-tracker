@@ -31,7 +31,7 @@ describe("Classroom emotion tracker app", () => {
     await user.click(screen.getByRole("button", { name: "PIN 설정" }));
 
     expect(screen.getByText("선생님 모드")).toBeInTheDocument();
-    expect(screen.getByText("학생별 7일 흐름")).toBeInTheDocument();
+    expect(screen.getByText("선택한 학생 흐름")).toBeInTheDocument();
   });
 
   it("shows individual weather after PIN unlock", async () => {
@@ -48,6 +48,37 @@ describe("Classroom emotion tracker app", () => {
     expect(screen.getByRole("button", { name: "2번 🌧️ 비" })).toBeInTheDocument();
   });
 
+  it("shows guidance before a teacher selects a student", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+
+    expect(screen.getByText("학생 번호를 눌러 살펴볼 친구를 선택해주세요.")).toBeInTheDocument();
+  });
+
+  it("focuses teacher detail on the selected student instead of opening the picker", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "2번 마음 날씨 선택" }));
+    await user.click(screen.getByRole("button", { name: "🌧️ 속상해요 선택" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+
+    await user.click(screen.getByRole("button", { name: "2번 🌧️ 비" }));
+
+    expect(screen.getByText("선택한 학생")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "2번" })).toBeInTheDocument();
+    expect(screen.getByLabelText("2번 7일 흐름")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "오늘 마음 날씨 고르기" })).not.toBeInTheDocument();
+  });
+
   it("updates class size from settings", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -60,8 +91,8 @@ describe("Classroom emotion tracker app", () => {
     fireEvent.change(screen.getByLabelText("학급 인원"), { target: { value: "12" } });
 
     const grid = screen.getByLabelText("학생 번호 격자");
-    expect(within(grid).getByRole("button", { name: "12번 마음 날씨 선택" })).toBeInTheDocument();
-    expect(within(grid).queryByRole("button", { name: "13번 마음 날씨 선택" })).not.toBeInTheDocument();
+    expect(within(grid).getByRole("button", { name: "12번" })).toBeInTheDocument();
+    expect(within(grid).queryByRole("button", { name: "13번" })).not.toBeInTheDocument();
   });
 
   it("shows an error when the current PIN is wrong during PIN change", async () => {
@@ -157,7 +188,7 @@ describe("Classroom emotion tracker app", () => {
     await user.type(confirmationInput, "1357");
     await user.click(screen.getByRole("button", { name: "PIN 변경" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("PIN을 변경했어요.");
+    expect(screen.getByText("PIN을 변경했어요.")).toBeInTheDocument();
     expect(currentPinInput).toHaveValue("");
     expect(newPinInput).toHaveValue("");
     expect(confirmationInput).toHaveValue("");
