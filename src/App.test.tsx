@@ -63,4 +63,54 @@ describe("Classroom emotion tracker app", () => {
     expect(within(grid).getByRole("button", { name: "12번 마음 날씨 선택" })).toBeInTheDocument();
     expect(within(grid).queryByRole("button", { name: "13번 마음 날씨 선택" })).not.toBeInTheDocument();
   });
+
+  it("shows an error when the current PIN is wrong during PIN change", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+
+    await user.type(screen.getByLabelText("현재 PIN"), "1111");
+    await user.type(screen.getByLabelText("새 PIN"), "1357");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "1357");
+    await user.click(screen.getByRole("button", { name: "PIN 변경" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("현재 PIN이 맞지 않아요.");
+  });
+
+  it("changes the teacher PIN successfully", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+
+    const currentPinInput = screen.getByLabelText("현재 PIN");
+    const newPinInput = screen.getByLabelText("새 PIN");
+    const confirmationInput = screen.getByLabelText("새 PIN 확인");
+
+    await user.type(currentPinInput, "2468");
+    await user.type(newPinInput, "1357");
+    await user.type(confirmationInput, "1357");
+    await user.click(screen.getByRole("button", { name: "PIN 변경" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("PIN을 변경했어요.");
+    expect(currentPinInput).toHaveValue("");
+    expect(newPinInput).toHaveValue("");
+    expect(confirmationInput).toHaveValue("");
+
+    await user.click(screen.getByRole("button", { name: "설정 닫기" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("PIN"), "1357");
+    await user.click(screen.getByRole("button", { name: "잠금 해제" }));
+
+    expect(screen.getByText("선생님 모드")).toBeInTheDocument();
+  });
 });
