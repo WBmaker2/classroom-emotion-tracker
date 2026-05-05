@@ -136,6 +136,13 @@ h2 {
   margin-bottom: 18px;
 }
 
+.teacher-panel-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .completion-pill {
   display: inline-grid;
   min-width: 64px;
@@ -476,9 +483,6 @@ h2 {
 }
 
 .danger-action {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: stretch;
   padding: 0 16px;
   background: #ffe1dc;
   color: #9f2417;
@@ -486,6 +490,16 @@ h2 {
 
 .danger-action:hover {
   background: #ffd0c7;
+}
+
+.teacher-mode-action {
+  padding: 0 16px;
+}
+
+.settings-reset-button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
 }
 
 .history-panel h3 {
@@ -644,11 +658,12 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .danger-action,
+  .settings-reset-button,
   .settings-panel input,
   .settings-panel label {
     grid-column: 1;
     grid-row: auto;
+    align-self: auto;
   }
 
   .history-detail-header {

@@ -46,6 +46,7 @@ type TeacherPanelProps = {
   onStudentCountChange: (studentCount: number) => void;
   onResetToday: () => void;
   onChangeTeacherPin: (currentPin: string, nextPin: string, confirmation: string) => string | null;
+  onRelock: () => void;
 };
 
 const MOOD_LABELS: Record<WeatherType, string> = {
@@ -358,6 +359,7 @@ function TeacherPanel({
   onStudentCountChange,
   onResetToday,
   onChangeTeacherPin,
+  onRelock,
 }: TeacherPanelProps) {
   const todayRecord = state.records.find((record) => record.date === todayKey);
   const [currentPin, setCurrentPin] = useState("");
@@ -402,16 +404,21 @@ function TeacherPanel({
           <p className="eyebrow">잠금 해제됨</p>
           <h2 id="teacher-panel-title">선생님 모드</h2>
         </div>
-        <button
-          type="button"
-          className="secondary-action"
-          aria-controls="teacher-settings"
-          aria-expanded={showSettings}
-          aria-label={showSettings ? "설정 닫기" : "설정 열기"}
-          onClick={onToggleSettings}
-        >
-          {showSettings ? "설정 닫기" : "설정 열기"}
-        </button>
+        <div className="teacher-panel-actions">
+          <button
+            type="button"
+            className="secondary-action"
+            aria-controls="teacher-settings"
+            aria-expanded={showSettings}
+            aria-label={showSettings ? "설정 닫기" : "설정 열기"}
+            onClick={onToggleSettings}
+          >
+            {showSettings ? "설정 닫기" : "설정 열기"}
+          </button>
+          <button type="button" className="teacher-mode-action danger-action" onClick={onRelock}>
+            교사용 잠그기
+          </button>
+        </div>
       </div>
 
       {showSettings ? (
@@ -493,7 +500,11 @@ function TeacherPanel({
               </button>
             </form>
           </section>
-          <button type="button" className="danger-action" onClick={onResetToday}>
+          <button
+            type="button"
+            className="danger-action settings-reset-button"
+            onClick={onResetToday}
+          >
             오늘 기록 초기화
           </button>
         </div>
@@ -646,6 +657,13 @@ function App() {
     }
   }
 
+  function handleRelockTeacherMode() {
+    setTeacherMode(false);
+    setShowSettings(false);
+    setPickerStudent(null);
+    setSelectedTeacherStudent(null);
+  }
+
   return (
     <main className="app-shell">
       <Header
@@ -674,6 +692,7 @@ function App() {
           }
           onChangeTeacherPin={handleChangeTeacherPin}
           onToggleSettings={() => setShowSettings((isVisible) => !isVisible)}
+          onRelock={handleRelockTeacherMode}
         />
       ) : null}
       {pickerStudent !== null ? (
