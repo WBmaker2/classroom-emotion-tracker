@@ -1,11 +1,15 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 describe("Classroom emotion tracker app", () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("lets a student select weather and updates class stats without showing individual weather", async () => {
@@ -84,6 +88,95 @@ describe("Classroom emotion tracker app", () => {
     expect(screen.queryByRole("dialog", { name: "오늘 마음 날씨 고르기" })).not.toBeInTheDocument();
   });
 
+  it("restores saved records and requires PIN unlock after remount", async () => {
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "1번 마음 날씨 선택" }));
+    await user.click(screen.getByRole("button", { name: "☀️ 좋아요 선택" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+
+    firstRender.unmount();
+
+    const nextUser = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "1번 선택 완료" })).toBeInTheDocument();
+    expect(screen.getByText("1명")).toBeInTheDocument();
+
+    await nextUser.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+
+    expect(screen.getByRole("dialog", { name: "PIN 입력" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("새 PIN")).not.toBeInTheDocument();
+
+    await nextUser.type(screen.getByLabelText("PIN"), "2468");
+    await nextUser.click(screen.getByRole("button", { name: "잠금 해제" }));
+
+    expect(screen.getByText("선생님 모드")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1번 ☀️ 맑음" })).toBeInTheDocument();
+  });
+
+  it("shows a teacher re-lock action and clears private teacher context immediately", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "1번 마음 날씨 선택" }));
+    await user.click(screen.getByRole("button", { name: "☀️ 좋아요 선택" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+    await user.click(screen.getByRole("button", { name: "1번 ☀️ 맑음" }));
+
+    expect(screen.getByRole("heading", { name: "1번" })).toBeInTheDocument();
+    expect(screen.getByText("선택한 학생")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "교사용 잠그기" }));
+
+    expect(screen.queryByRole("heading", { name: "1번" })).not.toBeInTheDocument();
+    expect(screen.queryByText("선택한 학생 흐름")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "설정 닫기" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "교사용 잠그기" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "선생님 모드" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1번 선택 완료" })).toBeInTheDocument();
+  });
+
+  it("requires PIN again after re-lock while keeping saved PIN and weather data", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "1번 마음 날씨 선택" }));
+    await user.click(screen.getByRole("button", { name: "☀️ 좋아요 선택" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+
+    await user.click(screen.getByRole("button", { name: "교사용 잠그기" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+
+    expect(screen.getByRole("dialog", { name: "PIN 입력" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("새 PIN")).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("PIN"), "1111");
+    await user.click(screen.getByRole("button", { name: "잠금 해제" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("PIN이 맞지 않아요.");
+
+    await user.clear(screen.getByLabelText("PIN"));
+    await user.type(screen.getByLabelText("PIN"), "2468");
+    await user.click(screen.getByRole("button", { name: "잠금 해제" }));
+
+    expect(screen.getByRole("button", { name: "1번 ☀️ 맑음" })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("classroom-emotion-tracker-state") ?? "{}")).toMatchObject({
+      settings: { teacherPin: "2468" },
+    });
+  });
+
   it("updates class size from settings", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -98,6 +191,45 @@ describe("Classroom emotion tracker app", () => {
     const grid = screen.getByLabelText("학생 번호 격자");
     expect(within(grid).getByRole("button", { name: "12번" })).toBeInTheDocument();
     expect(within(grid).queryByRole("button", { name: "13번" })).not.toBeInTheDocument();
+  });
+
+  it("keeps today's record when reset confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "1번 마음 날씨 선택" }));
+    await user.click(screen.getByRole("button", { name: "☀️ 좋아요 선택" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+    await user.click(screen.getByRole("button", { name: "오늘 기록 초기화" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("오늘 기록을 모두 초기화할까요?");
+    expect(screen.getByLabelText(/오늘 감정 분포, 참여 1 \/ 20명/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1번 ☀️ 맑음" })).toBeInTheDocument();
+  });
+
+  it("clears today's record when reset confirmation is accepted", async () => {
+    const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "1번 마음 날씨 선택" }));
+    await user.click(screen.getByRole("button", { name: "☀️ 좋아요 선택" }));
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+    await user.click(screen.getByRole("button", { name: "오늘 기록 초기화" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("오늘 기록을 모두 초기화할까요?");
+    expect(screen.getByLabelText(/오늘 감정 분포, 참여 0 \/ 20명/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1번 ☀️ 맑음" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1번" })).toBeInTheDocument();
   });
 
   it("clears the selected teacher student when class size shrinks past that number", async () => {

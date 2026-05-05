@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  AppState,
+  DailyWeatherRecord,
   buildRecentDateKeys,
   calculateStats,
   createDefaultState,
@@ -137,6 +139,30 @@ describe("weather domain", () => {
     let state = selectWeather(createDefaultState(), 1, "sunny", "2026-04-20");
     state = resetTodayRecord(state, "2026-04-20");
 
+    expect(calculateStats(state, "2026-04-20").completed).toBe(0);
+  });
+
+  it("clears only today's record and keeps previous in-window history", () => {
+    let state: AppState = {
+      ...createDefaultState(),
+      records: [
+        { date: "2026-04-20", entries: { "1": "sunny" } },
+        { date: "2026-04-19", entries: { "2": "stormy" } },
+        { date: "2026-04-14", entries: { "3": "rainy" } },
+      ],
+    };
+
+    state = resetTodayRecord(state, "2026-04-20");
+
+    expect(state.records).toHaveLength(2);
+    expect(state.records).toEqual(
+      expect.arrayContaining([
+        { date: "2026-04-19", entries: { "2": "stormy" } },
+        { date: "2026-04-14", entries: { "3": "rainy" } },
+      ]),
+    );
+    expect(state.records.every((record: DailyWeatherRecord) => record.date !== "2026-04-20")).toBe(true);
+    expect(calculateStats(state, "2026-04-19").completed).toBe(1);
     expect(calculateStats(state, "2026-04-20").completed).toBe(0);
   });
 });
