@@ -55,6 +55,14 @@ const MOOD_LABELS: Record<WeatherType, string> = {
   stormy: "화가 나요/긴장돼요",
 };
 
+const CHART_COLORS: Record<WeatherType | "missing", string> = {
+  sunny: "#f8cf45",
+  cloudy: "#b8cbd8",
+  rainy: "#8bb7f0",
+  stormy: "#f6a28c",
+  missing: "#d9e3ea",
+};
+
 function formatDateLabel(dateKey: string): string {
   const [, month, day] = dateKey.split("-");
   return `${Number(month)}.${Number(day)}`;
@@ -101,11 +109,12 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
   const stats = calculateStats(state, todayKey);
   const completionRate = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
   const chartSegments = [
-    { label: "맑음", value: stats.sunny, color: "#f8cf45" },
-    { label: "구름", value: stats.cloudy, color: "#b8cbd8" },
-    { label: "비", value: stats.rainy, color: "#8bb7f0" },
-    { label: "번개", value: stats.stormy, color: "#f6a28c" },
-    { label: "아직 선택 전", value: stats.missing, color: "#d9e3ea" },
+    ...WEATHER_OPTIONS.map((option) => ({
+      label: option.label,
+      value: stats[option.value],
+      color: CHART_COLORS[option.value],
+    })),
+    { label: "아직 선택 전", value: stats.missing, color: CHART_COLORS.missing },
   ];
   let offset = 0;
   const chartGradient = chartSegments
@@ -141,7 +150,7 @@ function StatsBoard({ state, todayKey }: { state: AppState; todayKey: string }) 
               <span>/ {stats.total}명</span>
             </div>
           </div>
-          <p>현재 참여</p>
+          <p className="stats-donut-caption">현재 참여</p>
         </div>
         <div className="stats-grid">
         {WEATHER_OPTIONS.map((option) => {
