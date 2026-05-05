@@ -366,7 +366,7 @@ function TeacherPanel({
             <div className="section-heading">
               <h3 id="pin-change-title">PIN 변경</h3>
             </div>
-            <form className="pin-form" onSubmit={handlePinChangeSubmit}>
+            <form className="pin-form" noValidate onSubmit={handlePinChangeSubmit}>
               <label htmlFor="current-pin">현재 PIN</label>
               <input
                 id="current-pin"
@@ -526,6 +526,10 @@ function App() {
     nextPin: string,
     confirmation: string,
   ): string | null {
+    if (!validatePin(currentPin)) {
+      return "현재 PIN은 숫자 4자리로 입력해주세요.";
+    }
+
     if (!verifyPin(state, currentPin)) {
       return "현재 PIN이 맞지 않아요.";
     }

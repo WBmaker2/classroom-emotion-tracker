@@ -82,6 +82,24 @@ describe("Classroom emotion tracker app", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("현재 PIN이 맞지 않아요.");
   });
 
+  it("shows an error when the current PIN format is invalid during PIN change", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+
+    await user.type(screen.getByLabelText("현재 PIN"), "11");
+    await user.type(screen.getByLabelText("새 PIN", { selector: "#next-pin" }), "1357");
+    await user.type(screen.getByLabelText("새 PIN 확인", { selector: "#next-pin-confirmation" }), "1357");
+    await user.click(screen.getByRole("button", { name: "PIN 변경" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("현재 PIN은 숫자 4자리로 입력해주세요.");
+  });
+
   it("shows an error when the new PIN format is invalid during PIN change", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -95,7 +113,7 @@ describe("Classroom emotion tracker app", () => {
     await user.type(screen.getByLabelText("현재 PIN"), "2468");
     await user.type(screen.getByLabelText("새 PIN", { selector: "#next-pin" }), "13");
     await user.type(screen.getByLabelText("새 PIN 확인", { selector: "#next-pin-confirmation" }), "13");
-    fireEvent.submit(screen.getByRole("button", { name: "PIN 변경" }).closest("form") as HTMLFormElement);
+    await user.click(screen.getByRole("button", { name: "PIN 변경" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("새 PIN은 숫자 4자리로 입력해주세요.");
   });
@@ -146,5 +164,16 @@ describe("Classroom emotion tracker app", () => {
     expect(JSON.parse(localStorage.getItem("classroom-emotion-tracker-state") ?? "{}")).toMatchObject({
       settings: { teacherPin: "1357" },
     });
+
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    const unlockPinInput = screen.getByLabelText("PIN");
+    await user.type(unlockPinInput, "2468");
+    await user.click(screen.getByRole("button", { name: "잠금 해제" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("PIN이 맞지 않아요.");
+
+    await user.clear(unlockPinInput);
+    await user.type(unlockPinInput, "1357");
+    await user.click(screen.getByRole("button", { name: "잠금 해제" }));
+    expect(screen.queryByRole("dialog", { name: "PIN 입력" })).not.toBeInTheDocument();
   });
 });
