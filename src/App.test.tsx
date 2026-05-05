@@ -95,6 +95,25 @@ describe("Classroom emotion tracker app", () => {
     expect(within(grid).queryByRole("button", { name: "13번" })).not.toBeInTheDocument();
   });
 
+  it("clears the selected teacher student when class size shrinks past that number", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "선생님 모드 열기" }));
+    await user.type(screen.getByLabelText("새 PIN"), "2468");
+    await user.type(screen.getByLabelText("새 PIN 확인"), "2468");
+    await user.click(screen.getByRole("button", { name: "PIN 설정" }));
+    await user.click(screen.getByRole("button", { name: "12번" }));
+
+    expect(screen.getByRole("heading", { name: "12번" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "설정 열기" }));
+    fireEvent.change(screen.getByLabelText("학급 인원"), { target: { value: "10" } });
+
+    expect(screen.queryByRole("heading", { name: "12번" })).not.toBeInTheDocument();
+    expect(screen.getByText("학생 번호를 눌러 살펴볼 친구를 선택해주세요.")).toBeInTheDocument();
+  });
+
   it("shows an error when the current PIN is wrong during PIN change", async () => {
     const user = userEvent.setup();
     render(<App />);

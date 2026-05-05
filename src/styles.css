@@ -584,10 +584,6 @@ h2 {
     grid-row: auto;
   }
 
-  .history-row {
-    grid-template-columns: 1fr;
-  }
-
   .history-detail-header {
     align-items: flex-start;
     flex-direction: column;
