@@ -18,7 +18,11 @@ describe("Classroom emotion tracker app", () => {
     expect(screen.getByText(/맑음/)).toBeInTheDocument();
     expect(screen.getByText("1명")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1번 선택 완료" })).toBeInTheDocument();
-    expect(screen.getByLabelText(/오늘 감정 분포, 참여 1 \/ 20명/)).toHaveTextContent("현재 참여");
+    expect(
+      screen.getByLabelText(
+        "오늘 감정 분포, 참여 1 / 20명, 맑음 1명, 구름 0명, 비 0명, 번개 0명, 아직 선택 전 19명",
+      ),
+    ).toHaveTextContent("현재 참여");
     expect(screen.queryByText("1번 ☀️")).not.toBeInTheDocument();
   });
 

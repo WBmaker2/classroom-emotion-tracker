@@ -163,7 +163,7 @@ h2 {
   padding: 18px;
 }
 
-.stats-donut-card p {
+.stats-donut-caption {
   margin-bottom: 0;
   color: #526b7c;
   font-weight: 800;
@@ -602,6 +602,16 @@ h2 {
   background: #ffe4dc;
 }
 
+@media (max-width: 1080px) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-donut-card {
+    justify-items: start;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -628,10 +638,6 @@ h2 {
 
   .stats-overview {
     grid-template-columns: 1fr;
-  }
-
-  .stats-donut-card {
-    justify-items: start;
   }
 
   .settings-panel {
